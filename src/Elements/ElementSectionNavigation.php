@@ -45,6 +45,7 @@ class ElementSectionNavigation extends BaseElement
         } else {
             $page = parent::getPage();
         }
+
         $this->_cache_page = $page;
         return $page;
     }
@@ -98,6 +99,7 @@ class ElementSectionNavigation extends BaseElement
                 $sectionNavigation = $this->getModelChildren($parent);
             }
         }
+
         $this->_cache_section_navigation = $sectionNavigation;
         return $sectionNavigation;
     }
