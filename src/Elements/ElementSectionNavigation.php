@@ -30,7 +30,7 @@ class ElementSectionNavigation extends BaseElement
     #[\Override]
     public function getPage()
     {
-        if(!is_null($this->_cache_page)) {
+        if (!is_null($this->_cache_page)) {
             return $this->_cache_page;
         }
 
@@ -87,7 +87,7 @@ class ElementSectionNavigation extends BaseElement
      */
     public function getSectionNavigation(): ?SS_List
     {
-        if(!is_null($this->_cache_section_navigation)) {
+        if (!is_null($this->_cache_section_navigation)) {
             return $this->_cache_section_navigation;
         }
 
