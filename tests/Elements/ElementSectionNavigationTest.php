@@ -24,7 +24,7 @@ class ElementSectionNavigationTest extends SapphireTest
     /**
      * Tests getSectionNavigation().
      */
-    public function testGetSectionNavigation()
+    public function testGetSectionNavigation(): void
     {
         $nav = $this->objFromFixture(ElementSectionNavigation::class, "one");
         $this->assertNull($nav->getSectionNavigation());
@@ -33,7 +33,7 @@ class ElementSectionNavigationTest extends SapphireTest
     /**
      *
      */
-    public function testGetSummary()
+    public function testGetSummary(): void
     {
         $object = $this->objFromFixture(ElementSectionNavigation::class, "one");
         $expected = DBField::create_field(
@@ -46,7 +46,7 @@ class ElementSectionNavigationTest extends SapphireTest
     /**
      *
      */
-    public function testGetType()
+    public function testGetType(): void
     {
         $object = $this->objFromFixture(ElementSectionNavigation::class, "one");
         $this->assertEquals($object->getType(), _t(ElementSectionNavigation::class . '.BLOCK_TYPE', 'Section Navigation'));

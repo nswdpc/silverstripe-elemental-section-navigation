@@ -16,26 +16,15 @@ use SilverStripe\Model\List\SS_List;
  */
 class ElementSectionNavigation extends BaseElement
 {
-    /**
-     * @var string
-     */
-    private static $icon = 'font-icon-menu';
+    private static string $icon = 'font-icon-menu';
 
-    /**
-     * @var string
-     */
-    private static $singular_name = 'Section Navigation Element';
+    private static string $singular_name = 'Section Navigation Element';
 
-    /**
-     * @var string
-     */
-    private static $plural_name = 'Section Navigation Elements';
+    private static string $plural_name = 'Section Navigation Elements';
 
-    /**
-     * @var string
-     */
-    private static $table_name = 'ElementSectionNavigation';
+    private static string $table_name = 'ElementSectionNavigation';
 
+    #[\Override]
     public function getPage()
     {
         $area = $this->Parent();
@@ -47,6 +36,7 @@ class ElementSectionNavigation extends BaseElement
                 return $area->getOwnerPage();
             }
         }
+
         return parent::getPage();
     }
 
@@ -96,9 +86,11 @@ class ElementSectionNavigation extends BaseElement
                 return null;
             }
         }
+
         return null;
     }
 
+    #[\Override]
     public function getSummary()
     {
         $page = $this->getPage();
@@ -107,9 +99,11 @@ class ElementSectionNavigation extends BaseElement
         } else {
             $fragment = _t(self::class  . '.SECTION_NAVIGATION', 'Section Navigation');
         }
+
         return DBField::create_field('HTMLFragment', "<p>" .  htmlspecialchars($fragment) . "</p>");
     }
 
+    #[\Override]
     protected function provideBlockSchema()
     {
         $blockSchema = parent::provideBlockSchema();
@@ -117,6 +111,7 @@ class ElementSectionNavigation extends BaseElement
         return $blockSchema;
     }
 
+    #[\Override]
     public function getType()
     {
         return _t(self::class . '.BLOCK_TYPE', 'Section Navigation');
