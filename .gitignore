@@ -1,2 +1,6 @@
 npm-debug.log
 node_modules/
+/.php-cs-fixer.cache
+/vendor/
+/public/
+/composer.lock
