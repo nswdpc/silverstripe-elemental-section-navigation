@@ -23,20 +23,30 @@ class ElementSectionNavigation extends BaseElement
 
     private static string $table_name = 'ElementSectionNavigation';
 
+    protected ?DataObject $_cache_page = null;
+
+    protected ?SS_List $_cache_section_navigation = null;
+
     #[\Override]
     public function getPage()
     {
-        $area = $this->Parent();
-
-        if ($area instanceof ElementalArea && $area->exists()) {
-            if (\class_exists(ElementList::class) && $area->getOwnerPage() instanceof ElementList && $area->getOwnerPage()->exists()) {
-                return $area->getOwnerPage()->getPage();
-            } else {
-                return $area->getOwnerPage();
-            }
+        if(!is_null($this->_cache_page)) {
+            return $this->_cache_page;
         }
 
-        return parent::getPage();
+        $area = $this->Parent();
+        $page = null;
+        if ($area instanceof ElementalArea && $area->exists()) {
+            if (\class_exists(ElementList::class) && $area->getOwnerPage() instanceof ElementList && $area->getOwnerPage()->exists()) {
+                $page = $area->getOwnerPage()->getPage();
+            } else {
+                $page = $area->getOwnerPage();
+            }
+        } else {
+            $page = parent::getPage();
+        }
+        $this->_cache_page = $page;
+        return $page;
     }
 
     /**
@@ -76,17 +86,20 @@ class ElementSectionNavigation extends BaseElement
      */
     public function getSectionNavigation(): ?SS_List
     {
-        if (($page = $this->getPage())) {
-            if (($children = $this->getModelChildren($page)) && $children->Count() > 0) {
-                return $children;
-            } elseif ($parent = $this->getModelParent($page)) {
-                return $this->getModelChildren($parent);
-            } else {
-                return null;
-            }
+        if(!is_null($this->_cache_section_navigation)) {
+            return $this->_cache_section_navigation;
         }
 
-        return null;
+        $sectionNavigation = null;
+        if (($page = $this->getPage())) {
+            if (($children = $this->getModelChildren($page)) && $children->Count() > 0) {
+                $sectionNavigation = $children;
+            } elseif ($parent = $this->getModelParent($page)) {
+                $sectionNavigation = $this->getModelChildren($parent);
+            }
+        }
+        $this->_cache_section_navigation = $sectionNavigation;
+        return $sectionNavigation;
     }
 
     #[\Override]
