@@ -5,8 +5,11 @@ namespace Dynamic\Elements\Section\Elements;
 use DNADesign\Elemental\Models\BaseElement;
 use DNADesign\Elemental\Models\ElementalArea;
 use DNADesign\ElementalList\Model\ElementList;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBHTMLText;
+use SilverStripe\ORM\Hierarchy\Hierarchy;
+use SilverStripe\Model\List\SS_List;
 
 /**
  * Class ElementSectionNavigation.
@@ -33,16 +36,12 @@ class ElementSectionNavigation extends BaseElement
      */
     private static $table_name = 'ElementSectionNavigation';
 
-    /**
-     * @return null|\SilverStripe\ORM\DataObject
-     * @throws \SilverStripe\ORM\ValidationException
-     */
     public function getPage()
     {
         $area = $this->Parent();
 
         if ($area instanceof ElementalArea && $area->exists()) {
-            if ($area->getOwnerPage() instanceof ElementList && $area->getOwnerPage()->exists()) {
+            if (\class_exists(ElementList::class) && $area->getOwnerPage() instanceof ElementList && $area->getOwnerPage()->exists()) {
                 return $area->getOwnerPage()->getPage();
             } else {
                 return $area->getOwnerPage();
@@ -52,37 +51,65 @@ class ElementSectionNavigation extends BaseElement
     }
 
     /**
-     * @return bool|\SilverStripe\ORM\SS_List
+     * Return whether the model provided as the Hierarchy extension applied
+     * Hierarchy provides the Children and getParent methods
      */
-    public function getSectionNavigation()
+    protected function hasHierarchy(DataObject $model): bool
     {
-        if ($page = $this->getPage()) {
-            if ($page->Children()->Count() > 0) {
-                return $page->Children();
-            } elseif ($page->Parent()) {
-                return $page->Parent()->Children();
+        return $model->hasExtension(Hierarchy::class);
+    }
+
+    /**
+     * Returns children of the provided model, provided it has the Hierarchy extension
+     * or a 'Children' method
+     */
+    protected function getModelChildren(DataObject $model): ?SS_List
+    {
+        // @phpstan-ignore method.notFound
+        return $this->hasHierarchy($model) || $model->hasMethod('Children') ? $model->Children() : null;
+    }
+
+    /**
+     * Returns parent of the provided model, provided it has the Hierarchy extension
+     * or a 'getParent' method
+     */
+    protected function getModelParent(DataObject $model): ?DataObject
+    {
+        // @phpstan-ignore method.notFound
+        return $this->hasHierarchy($model) || $model->hasMethod('getParent') ? $model->getParent() : null;
+    }
+
+    /**
+     * Return section navigation of a 'page'. The page may not be a SiteTree object.
+     * This preserves BC behaviour of returning parent children (siblings) if the current 'page'
+     * has no children
+     * This method doesn't take into account ShowInMenus or similar
+     */
+    public function getSectionNavigation(): ?SS_List
+    {
+        if (($page = $this->getPage())) {
+            if (($children = $this->getModelChildren($page)) && $children->Count() > 0) {
+                return $children;
+            } elseif ($parent = $this->getModelParent($page)) {
+                return $this->getModelChildren($parent);
             } else {
-                return false;
+                return null;
             }
         }
-
-        return false;
+        return null;
     }
 
-    /**
-     * @return DBHTMLText
-     */
     public function getSummary()
     {
-        if ($this->getPage()) {
-            return DBField::create_field('HTMLText', 'Navigation for ' . $this->getPage()->Title)->Summary(20);
+        $page = $this->getPage();
+        if ($page) {
+            $fragment = _t(self::class  . '.SECTION_NAVIGATION_FOR', 'Section Navigation for {title}', [ 'title' => $page->Title ]);
+        } else {
+            $fragment = _t(self::class  . '.SECTION_NAVIGATION', 'Section Navigation');
         }
-        return DBField::create_field('HTMLText', '<p>Section Navigation</p>')->Summary(20);
+        return DBField::create_field('HTMLFragment', "<p>" .  htmlspecialchars($fragment) . "</p>");
     }
 
-    /**
-     * @return array
-     */
     protected function provideBlockSchema()
     {
         $blockSchema = parent::provideBlockSchema();
@@ -90,11 +117,8 @@ class ElementSectionNavigation extends BaseElement
         return $blockSchema;
     }
 
-    /**
-     * @return string
-     */
     public function getType()
     {
-        return _t(__CLASS__.'.BlockType', 'Section Navigation');
+        return _t(self::class . '.BLOCK_TYPE', 'Section Navigation');
     }
 }
