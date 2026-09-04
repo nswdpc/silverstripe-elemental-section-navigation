@@ -114,7 +114,7 @@ class ElementSectionNavigation extends BaseElement
             $fragment = _t(self::class  . '.SECTION_NAVIGATION', 'Section Navigation');
         }
 
-        return DBField::create_field('HTMLFragment', "<p>" .  htmlspecialchars($fragment) . "</p>");
+        return htmlspecialchars($fragment);
     }
 
     #[\Override]
