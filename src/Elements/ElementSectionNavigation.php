@@ -5,84 +5,118 @@ namespace Dynamic\Elements\Section\Elements;
 use DNADesign\Elemental\Models\BaseElement;
 use DNADesign\Elemental\Models\ElementalArea;
 use DNADesign\ElementalList\Model\ElementList;
-use SilverStripe\ORM\FieldType\DBField;
-use SilverStripe\ORM\FieldType\DBHTMLText;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\Hierarchy\Hierarchy;
+use SilverStripe\Model\List\SS_List;
 
 /**
  * Class ElementSectionNavigation.
  */
 class ElementSectionNavigation extends BaseElement
 {
-    /**
-     * @var string
-     */
-    private static $icon = 'font-icon-menu';
+    private static string $icon = 'font-icon-menu';
 
-    /**
-     * @var string
-     */
-    private static $singular_name = 'Section Navigation Element';
+    private static string $singular_name = 'Section Navigation Element';
 
-    /**
-     * @var string
-     */
-    private static $plural_name = 'Section Navigation Elements';
+    private static string $plural_name = 'Section Navigation Elements';
 
-    /**
-     * @var string
-     */
-    private static $table_name = 'ElementSectionNavigation';
+    private static string $table_name = 'ElementSectionNavigation';
 
-    /**
-     * @return null|\SilverStripe\ORM\DataObject
-     * @throws \SilverStripe\ORM\ValidationException
-     */
+    protected ?DataObject $_cache_page = null;
+
+    protected ?SS_List $_cache_section_navigation = null;
+
+    #[\Override]
     public function getPage()
     {
+        if (!is_null($this->_cache_page)) {
+            return $this->_cache_page;
+        }
+
         $area = $this->Parent();
-
+        $page = null;
         if ($area instanceof ElementalArea && $area->exists()) {
-            if ($area->getOwnerPage() instanceof ElementList && $area->getOwnerPage()->exists()) {
-                return $area->getOwnerPage()->getPage();
+            if (\class_exists(ElementList::class) && $area->getOwnerPage() instanceof ElementList && $area->getOwnerPage()->exists()) {
+                $page = $area->getOwnerPage()->getPage();
             } else {
-                return $area->getOwnerPage();
+                $page = $area->getOwnerPage();
             }
+        } else {
+            $page = parent::getPage();
         }
-        return parent::getPage();
+
+        $this->_cache_page = $page;
+        return $page;
     }
 
     /**
-     * @return bool|\SilverStripe\ORM\SS_List
+     * Return whether the model provided as the Hierarchy extension applied
+     * Hierarchy provides the Children and getParent methods
      */
-    public function getSectionNavigation()
+    protected function hasHierarchy(DataObject $model): bool
     {
-        if ($page = $this->getPage()) {
-            if ($page->Children()->Count() > 0) {
-                return $page->Children();
-            } elseif ($page->Parent()) {
-                return $page->Parent()->Children();
-            } else {
-                return false;
-            }
-        }
-
-        return false;
+        return $model->hasExtension(Hierarchy::class);
     }
 
     /**
-     * @return DBHTMLText
+     * Returns children of the provided model, provided it has the Hierarchy extension
+     * or a 'Children' method
      */
+    protected function getModelChildren(DataObject $model): ?SS_List
+    {
+        // @phpstan-ignore method.notFound
+        return $this->hasHierarchy($model) || $model->hasMethod('Children') ? $model->Children() : null;
+    }
+
+    /**
+     * Returns parent of the provided model, provided it has the Hierarchy extension
+     * or a 'getParent' method
+     */
+    protected function getModelParent(DataObject $model): ?DataObject
+    {
+        // @phpstan-ignore method.notFound
+        return $this->hasHierarchy($model) || $model->hasMethod('getParent') ? $model->getParent() : null;
+    }
+
+    /**
+     * Return section navigation of a 'page'. The page may not be a SiteTree object.
+     * This preserves BC behaviour of returning parent children (siblings) if the current 'page'
+     * has no children
+     * This method doesn't take into account ShowInMenus or similar
+     */
+    public function getSectionNavigation(): ?SS_List
+    {
+        if (!is_null($this->_cache_section_navigation)) {
+            return $this->_cache_section_navigation;
+        }
+
+        $sectionNavigation = null;
+        if (($page = $this->getPage())) {
+            if (($children = $this->getModelChildren($page)) && $children->Count() > 0) {
+                $sectionNavigation = $children;
+            } elseif ($parent = $this->getModelParent($page)) {
+                $sectionNavigation = $this->getModelChildren($parent);
+            }
+        }
+
+        $this->_cache_section_navigation = $sectionNavigation;
+        return $sectionNavigation;
+    }
+
+    #[\Override]
     public function getSummary()
     {
-        if ($this->getPage()) {
-            return DBField::create_field('HTMLText', 'Navigation for ' . $this->getPage()->Title)->Summary(20);
+        $page = $this->getPage();
+        if ($page) {
+            $fragment = _t(self::class  . '.SECTION_NAVIGATION_FOR', 'Section Navigation for {title}', [ 'title' => $page->Title ]);
+        } else {
+            $fragment = _t(self::class  . '.SECTION_NAVIGATION', 'Section Navigation');
         }
-        return DBField::create_field('HTMLText', '<p>Section Navigation</p>')->Summary(20);
+
+        return htmlspecialchars($fragment);
     }
 
-    /**
-     * @return array
-     */
+    #[\Override]
     protected function provideBlockSchema()
     {
         $blockSchema = parent::provideBlockSchema();
@@ -90,11 +124,9 @@ class ElementSectionNavigation extends BaseElement
         return $blockSchema;
     }
 
-    /**
-     * @return string
-     */
+    #[\Override]
     public function getType()
     {
-        return _t(__CLASS__.'.BlockType', 'Section Navigation');
+        return _t(self::class . '.BLOCK_TYPE', 'Section Navigation');
     }
 }

@@ -2,12 +2,7 @@
 
 namespace Dynamic\Elements\Section\Tests;
 
-use DNADesign\Elemental\Models\ElementalArea;
-use Dynamic\Base\Test\TestBlogPost;
 use Dynamic\Elements\Section\Elements\ElementSectionNavigation;
-use Dynamic\Elements\Section\Test\TestPage;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Dev\Debug;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\FieldType\DBField;
 
@@ -24,28 +19,31 @@ class ElementSectionNavigationTest extends SapphireTest
     /**
      * Tests getSectionNavigation().
      */
-    public function testGetSectionNavigation()
+    public function testGetSectionNavigation(): void
     {
         $nav = $this->objFromFixture(ElementSectionNavigation::class, "one");
-        $this->assertFalse($nav->getSectionNavigation());
+        $this->assertNull($nav->getSectionNavigation());
     }
 
     /**
      *
      */
-    public function testGetSummary()
+    public function testGetSummary(): void
     {
         $object = $this->objFromFixture(ElementSectionNavigation::class, "one");
-        $expected = DBField::create_field('HTMLText', '<p>Section Navigation</p>')->Summary(20);
+        $expected = DBField::create_field(
+            'HTMLFragment',
+            '<p>' . htmlspecialchars(_t(ElementSectionNavigation::class  . '.SECTION_NAVIGATION', 'Section Navigation')) . '</p>'
+        );
         $this->assertEquals($object->getSummary(), $expected);
     }
 
     /**
      *
      */
-    public function testGetType()
+    public function testGetType(): void
     {
         $object = $this->objFromFixture(ElementSectionNavigation::class, "one");
-        $this->assertEquals($object->getType(), 'Section Navigation');
+        $this->assertEquals($object->getType(), _t(ElementSectionNavigation::class . '.BLOCK_TYPE', 'Section Navigation'));
     }
 }
