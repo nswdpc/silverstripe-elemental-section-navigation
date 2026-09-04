@@ -6,7 +6,6 @@ use DNADesign\Elemental\Models\BaseElement;
 use DNADesign\Elemental\Models\ElementalArea;
 use DNADesign\ElementalList\Model\ElementList;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\Hierarchy\Hierarchy;
 use SilverStripe\Model\List\SS_List;
 
